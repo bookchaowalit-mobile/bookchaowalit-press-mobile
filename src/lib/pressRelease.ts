@@ -89,14 +89,16 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function checkRelease(r: Release): Check[] {
   const headline = r.headline.trim();
+  // Characters as a reader counts them (an emoji or accented letter is 1).
+  const headlineLength = Array.from(headline.normalize('NFC')).length;
   const letters = headline.replace(/[^A-Za-z]/g, '');
   const bodyWords = wordCount(r.body);
   return [
     {
       id: 'headline',
       label: 'Headline (10–100 characters)',
-      ok: headline.length >= 10 && headline.length <= 100,
-      hint: `${headline.length} characters`,
+      ok: headlineLength >= 10 && headlineLength <= 100,
+      hint: `${headlineLength} ${headlineLength === 1 ? 'character' : 'characters'}`,
     },
     {
       id: 'headline-case',
@@ -117,7 +119,7 @@ export function checkRelease(r: Release): Check[] {
       id: 'body',
       label: 'Body of 150–800 words',
       ok: bodyWords >= 150 && bodyWords <= 800,
-      hint: `${bodyWords} words`,
+      hint: `${bodyWords} ${bodyWords === 1 ? 'word' : 'words'}`,
     },
     {
       id: 'quote',
@@ -148,6 +150,23 @@ export function readinessScore(checks: Check[]): number {
   return Math.round((checks.filter(c => c.ok).length / checks.length) * 100);
 }
 
+/**
+ * “Quote,” said Name. — AP style: a quote ending in "." takes a comma instead
+ * (not “thrilled.,”), one ending in "?" or "!" keeps it with no comma, and an
+ * attribution that already ends in "." (e.g. "Acme Inc.") gets no second one.
+ */
+export function formatQuote(rawQuote: string, rawBy: string): string {
+  const quote = rawQuote.trim().replace(/^["“]|["”]$/g, '').trim();
+  const by = rawBy.trim();
+  if (!by) {
+    return `“${quote}”`;
+  }
+  const ending = /[?!]$/.test(quote) ? '' : ',';
+  const text = ending ? quote.replace(/[.,;:]+$/, '') : quote;
+  const close = /[.?!]$/.test(by) ? '' : '.';
+  return `“${text}${ending}” said ${by}${close}`;
+}
+
 /** Plain-text release in the conventional layout, ending with "###". */
 export function formatRelease(r: Release): string {
   const parts: string[] = ['FOR IMMEDIATE RELEASE'];
@@ -163,9 +182,7 @@ export function formatRelease(r: Release): string {
     parts.push([dateline, body].filter(Boolean).join(' '));
   }
   if (r.quote.trim()) {
-    const quote = r.quote.trim().replace(/^["“]|["”]$/g, '');
-    const by = r.quoteBy.trim();
-    parts.push(by ? `“${quote},” said ${by}.` : `“${quote}”`);
+    parts.push(formatQuote(r.quote, r.quoteBy));
   }
   if (r.boilerplate.trim()) {
     parts.push(r.boilerplate.trim());

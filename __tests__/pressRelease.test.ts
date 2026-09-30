@@ -8,6 +8,7 @@ import {
   readingMinutes,
   wordCount,
   type Release,
+  formatQuote,
 } from '../src/lib/pressRelease';
 
 const words = (n: number) => Array.from({length: n}, () => 'word').join(' ');
@@ -99,5 +100,25 @@ describe('formatRelease', () => {
     expect(formatRelease({...EMPTY_RELEASE, quote: '"Hello"'})).toBe(
       'FOR IMMEDIATE RELEASE\n\n“Hello”\n\n###',
     );
+  });
+});
+
+describe('pass 3 edge cases', () => {
+  it('does not produce ".," or double periods around quotes', () => {
+    expect(formatQuote('We are thrilled.', 'Jane Doe')).toBe('“We are thrilled,” said Jane Doe.');
+    expect(formatQuote('Can you believe it?', 'Jane Doe')).toBe('“Can you believe it?” said Jane Doe.');
+    expect(formatQuote('Wow!', 'Jane Doe, CEO of Acme Inc.')).toBe('“Wow!” said Jane Doe, CEO of Acme Inc.');
+    expect(formatQuote('“Plain”', 'Ann')).toBe('“Plain,” said Ann.');
+    expect(formatQuote('Solo.', '')).toBe('“Solo.”');
+  });
+  it('counts headline characters as readers do', () => {
+    const release = {...EMPTY_RELEASE, headline: '🚀🚀🚀🚀🚀 Launch'};
+    const check = checkRelease(release).find(c => c.id === 'headline')!;
+    expect(check.hint).toBe('12 characters');
+    const decomposed = checkRelease({...EMPTY_RELEASE, headline: 'Cafe\u0301 opens'}).find(c => c.id === 'headline')!;
+    expect(decomposed.hint).toBe('10 characters');
+  });
+  it('pluralises the word-count hint', () => {
+    expect(checkRelease({...EMPTY_RELEASE, body: 'one'}).find(c => c.id === 'body')!.hint).toBe('1 word');
   });
 });

@@ -47,3 +47,11 @@ Score: 6/10 (was 5/10) — the draft survives restarts; native projects still no
 - "Start over" now asks for confirmation (it clears the saved draft); Share errors are caught.
 - Advisories: none fixable within the same major (image-size high via metro, fast-xml-parser and decode-uri-component moderate) — needs the RN upgrade (P2).
 - Verified: lint, typecheck, jest, `npm run bundle:android`. Native module autolinks once `android/`/`ios/` exist (P0 above).
+
+## Done in this pass (pass 3)
+
+Score: 7.5/10 (was 7/10) — edge-case hunt in `src/lib/pressRelease.ts`.
+
+- Bug: a quote ending in a period rendered as “We are thrilled.,” said …, a quote ending in "?"/"!" got an extra comma, and an attribution ending in "Inc." got a second period. New `formatQuote` follows AP punctuation.
+- Bug: the headline 10–100 character check counted UTF-16 units (an emoji = 2, a decomposed "é" = 2); it now counts NFC code points. Word/character hints are pluralised.
+- Verified: lint, typecheck, 18 Jest tests, `react-native bundle` for Android.
