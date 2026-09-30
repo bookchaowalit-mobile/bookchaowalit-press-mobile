@@ -179,3 +179,42 @@ export function formatRelease(r: Release): string {
   parts.push('###');
   return parts.join('\n\n');
 }
+
+export const DRAFT_STORAGE_KEY = 'press.draft.v1';
+
+/** Versioned JSON for the saved draft. */
+export function serializeDraft(r: Release): string {
+  return JSON.stringify({v: 1, release: r});
+}
+
+/**
+ * Parses a stored draft; missing, corrupt or foreign data yields null so the
+ * app starts from an empty release instead of crashing. Unknown fields are
+ * dropped and missing string fields default to ''.
+ */
+export function parseDraft(raw: string | null): Release | null {
+  if (!raw) {
+    return null;
+  }
+  try {
+    const data: unknown = JSON.parse(raw);
+    if (!data || typeof data !== 'object' || (data as {v?: unknown}).v !== 1) {
+      return null;
+    }
+    const stored = (data as {release?: unknown}).release;
+    if (!stored || typeof stored !== 'object') {
+      return null;
+    }
+    const out = {...EMPTY_RELEASE};
+    for (const key of Object.keys(EMPTY_RELEASE) as (keyof Release)[]) {
+      const value = (stored as Record<string, unknown>)[key];
+      if (value !== undefined && typeof value !== 'string') {
+        return null;
+      }
+      out[key] = value ?? '';
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}

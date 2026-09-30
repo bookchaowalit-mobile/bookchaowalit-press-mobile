@@ -15,7 +15,6 @@
 - Generate native projects (`npx @react-native-community/cli init` with the
   RN 0.76 template, copy `android/` + `ios/`, set the app name `PressMobile`)
   so `npm run android|ios` works; add an Android debug build job to CI.
-- Persist drafts (AsyncStorage) — the draft is in-memory and lost on restart.
 
 ### P1
 - Multiple saved releases (list, duplicate, delete) and an embargo date/time.
@@ -38,3 +37,13 @@
   RN 0.76 template dev dependencies and a committed `package-lock.json`.
 - CI runs `npm ci`, lint (0 warnings), typecheck, Jest and a Metro Android
   bundle with no failure masking.
+
+## Done in this pass (pass 2)
+
+Score: 6/10 (was 5/10) — the draft survives restarts; native projects still not generated.
+
+- Draft persistence: `ReleaseProvider` loads/saves the release with `@react-native-async-storage/async-storage` 2.2.0 (versioned `serializeDraft`/`parseDraft`, unknown fields dropped, corrupt data ignored). Writes start only after a successful read, so a storage error cannot wipe a saved draft. Jest uses the package's official mock (`jest.setup.js`).
+- Tests: parseDraft cases, save-and-restore across two provider sessions, failed-read-never-overwrites (15 jest tests total).
+- "Start over" now asks for confirmation (it clears the saved draft); Share errors are caught.
+- Advisories: none fixable within the same major (image-size high via metro, fast-xml-parser and decode-uri-component moderate) — needs the RN upgrade (P2).
+- Verified: lint, typecheck, jest, `npm run bundle:android`. Native module autolinks once `android/`/`ios/` exist (P0 above).

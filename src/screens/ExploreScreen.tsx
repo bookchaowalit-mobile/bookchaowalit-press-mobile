@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   Share,
@@ -13,6 +14,11 @@ import {useRelease} from '../state';
 /** Preview of the formatted release, with share and reset actions. */
 export default function ExploreScreen() {
   const {release, reset} = useRelease();
+  const confirmReset = () =>
+    Alert.alert('Start over?', 'This clears the saved draft on this device.', [
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'Clear draft', style: 'destructive', onPress: reset},
+    ]);
   const text = formatRelease(release);
   const score = readinessScore(checkRelease(release));
 
@@ -32,13 +38,19 @@ export default function ExploreScreen() {
         <Pressable
           accessibilityRole="button"
           style={[styles.button, styles.primary]}
-          onPress={() => Share.share({message: text, title: release.headline})}>
+          onPress={() =>
+            Share.share({message: text, title: release.headline}).catch(
+              () => undefined,
+            )
+          }>
           <Text style={styles.primaryText}>Share release</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityHint="Asks before clearing the saved draft"
           style={styles.button}
-          onPress={reset}>
+          onPress={confirmReset}>
+
           <Text style={styles.buttonText}>Start over</Text>
         </Pressable>
       </View>
