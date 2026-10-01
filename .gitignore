@@ -4,3 +4,6 @@ build/
 ios/Pods/
 *.apk
 *.aab
+dist/
+coverage/
+.env
